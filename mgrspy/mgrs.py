@@ -208,7 +208,7 @@ def _epsgForWgs(latitude, longitude):
     """ Returns corresponding UTM or UPS EPSG code from WGS84 coordinates
     @param latitude - latitude value
     @param longitude - longitude value
-    @returns - EPSG code
+    @returns - tuple containing hemisphere, UTM zone and EPSG code
     """
 
     if math.fabs(latitude) > 90 or math.fabs(longitude) > 180:
