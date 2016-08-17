@@ -64,7 +64,7 @@ def wgsToMgrs(latitude, longitude, precision):
     @param precision - precision level of MGRS string
     @returns - MGRS coordinate string
     """
-    if (latitude < -90) or (latitude > 90):
+    if math.fabs(latitude) > 90:
         raise MgrsException('Latitude outside of valid range (-90 to 90 degrees).')
 
     if (longitude < -180) or (longitude > 360):
