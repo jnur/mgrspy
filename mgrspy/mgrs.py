@@ -75,15 +75,14 @@ def wgsToMgrs(latitude, longitude, precision):
 
     if (latitude < -80) or (latitude > 84):
         # Convert to UPS
-        hs = _hemisphere(latitude)
-        epsg = _epsgForWgs(latitude, longitude)
+        hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
         src = osr.SpatialReference()
         src.ImportFromEPSG(4326)
         dst = osr.SpatialReference()
         dst.ImportFromEPSG(epsg)
         ct = osr.CoordinateTransformation(src, dst)
         x, y, z = ct.TransformPoint(longitude, latitude)
-        mgrs = upsToMgrs(hs, x, y, 5)
+        mgrs = upsToMgrs(hemisphere, x, y, precision)
     else:
         # Convert to UTM
         pass
@@ -211,31 +210,53 @@ def _epsgForWgs(latitude, longitude):
     @param longitude - longitude value
     @returns - EPSG code
     """
+
     if math.fabs(latitude) > 90 or math.fabs(longitude) > 180:
         return None
 
+    # hemisphere
+    if latitude < 0:
+        hemisphere = 'S'
+    else:
+        hemisphere = 'N'
+
+    # UTM zone
     if latitude <= -80 or latitude >= 84:
         # Coordinates falls under UPS system
-        fuse = 61
+        zone = 61
     else:
         # Coordinates falls under UTM system
-        fuse = int(longitude / 6.0) + 30
+        #~ zone = int(longitude / 6.0) + 30
+#~
+        #~ # -180 special case
+        #~ if zone == 0:
+            #~ zone = 60
+        if longitude < 180:
+            zone = int(31 + (longitude / 6.0))
+        else:
+            zone = int((longitude / 6) - 29)
 
-        # -180 special case
-        if fuse == 0:
-            fuse = 60
+        if zone > 60:
+            zone = 1
 
-    # Calculating North South
+        # Handle UTM special cases
+        if (latitude > 55) and (latitude < 63) and (longitude > -1) and (longitude < 3):
+            zone = 31
+        elif (latitude > 55) and (latitude < 64) and (longitude > 2) and (longitude < 12):
+            zone = 32
+        elif (latitude > 71) and (longitude > -1) and (longitude < 9):
+            zone = 31
+        elif (latitude > 71) and (longitude > 8) and (longitude < 21):
+            zone = 33
+        elif (latitude > 71) and (longitude > 20) and (longitude < 33):
+            zone = 35
+        elif (latitude > 71) and (longitude > 32) and (longitude < 42):
+            zone = 37
+
+    # North or South
     if latitude >= 0:
         ns = 600
     else:
         ns = 700
 
-    return 32000 + ns + fuse
-
-
-def _hemisphere(latitude):
-    if latitude < 0:
-        return 'S'
-    else:
-        return 'N'
+    return hemisphere, zone, 32000 + ns + zone
