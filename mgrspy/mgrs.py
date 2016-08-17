@@ -267,13 +267,13 @@ def mgrsString(zone, mgrsLetters, easting, northing, precision):
     if easting >= 99999.5:
         easting = 99999.0
     east = int(easting / divisor)
-    mgrs += unicode(east)[:precision]
+    mgrs += unicode(east).rjust(5, '0')[:precision]
 
     northing = math.fmod(northing, 100000.0)
     if northing >= 99999.5:
         northing = 99999.0
     north = int(northing / divisor)
-    mgrs += unicode(north)[:precision]
+    mgrs += unicode(north).rjust(5, '0')[:precision]
 
     return mgrs
 
