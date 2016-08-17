@@ -27,6 +27,29 @@ __revision__ = '$Format:%H$'
 
 import math
 
+from osgeo import osr
+
+
+ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+LETTERS = {l: c for c, l in enumerate(ALPHABET)}
+
+ONEHT = 100000.0
+TWOMIL = 2000000.0
+
+MIN_EASTING = 100000
+MAX_EASTING = 900000
+MIN_NORTHING = 0
+MAX_NORTHING = 10000000
+MAX_PRECISION = 5                    # Maximum precision of easting & northing
+MIN_EAST_NORTH = 0
+MAX_EAST_NORTH = 4000000
+
+UPS_Constants = {0: [LETTERS['A'], LETTERS['J'], LETTERS['Z'], LETTERS['Z'], 800000.0, 800000.0],
+                 1: [LETTERS['B'], LETTERS['A'], LETTERS['R'], LETTERS['Z'], 2000000.0, 800000.0],
+                 2: [LETTERS['Y'], LETTERS['J'], LETTERS['Z'], LETTERS['P'], 800000.0, 1300000.0],
+                 3: [LETTERS['Z'], LETTERS['A'], LETTERS['J'], LETTERS['P'], 2000000.0, 1300000.0]
+                }
+
 
 class MgrsException(Exception):
     pass
@@ -52,7 +75,167 @@ def wgsToMgrs(latitude, longitude, precision):
 
     if (latitude < -80) or (latitude > 84):
         # Convert to UPS
-        pass
+        hs = _hemisphere(latitude)
+        epsg = _epsgForWgs(latitude, longitude)
+        src = osr.SpatialReference()
+        src.ImportFromEPSG(4326)
+        dst = osr.SpatialReference()
+        dst.ImportFromEPSG(epsg)
+        ct = osr.CoordinateTransformation(src, dst)
+        x, y, z = ct.TransformPoint(longitude, latitude)
+        mgrs = upsToMgrs(hs, x, y, 5)
     else:
         # Convert to UTM
         pass
+
+    return mgrs
+
+
+def upsToMgrs(hemisphere, easting, northing, precision):
+    """ Converts UPS (hemisphere, easting, and northing) coordinates
+    to an MGRS coordinate string.
+
+    @param hemisphere - hemisphere either 'N' or 'S'
+    @param easting - easting/X in meters
+    @param northing - northing/Y in meters
+    @param precision - precision level of MGRS string
+    @returns - MGRS coordinate string
+    """
+    if hemisphere not in ['N', 'S']:
+        raise MgrsException('Invalid hemisphere ("N" or "S").')
+
+    if (easting < MIN_EAST_NORTH) or (easting > MAX_EAST_NORTH):
+        raise MgrsException('Easting outside of valid range (100,000 to 900,000 meters for UTM, 0 to 4,000,000 meters for UPS).')
+
+    if (northing < MIN_EAST_NORTH) or (northing > MAX_EAST_NORTH):
+        raise MgrsException('Northing outside of valid range (0 to 10,000,000 meters for UTM, 0 to 4,000,000 meters for UPS).')
+
+    if (precision < 0) or (precision > MAX_PRECISION):
+        raise MgrsException('The precision must be between 0 and 5 inclusive.')
+
+    mgrsLetters = [None, None, None]
+    if hemisphere == 'N':
+        if easting >= TWOMIL:
+            mgrsLetters[0] = LETTERS['Z']
+        else:
+            mgrsLetters[0] = LETTERS['Y']
+
+        idx = mgrsLetters[0] - 22
+        ltr2LowValue = UPS_Constants[idx][1]
+        falseEasting = UPS_Constants[idx][4]
+        falseNorthing = UPS_Constants[idx][5]
+    else:
+        if easting >= TWOMIL:
+            mgrsLetters[0] = LETTERS['B']
+        else:
+            mgrsLetters[0] = LETTERS['A']
+
+        ltr2LowValue = UPS_Constants[0][1]
+        falseEasting = UPS_Constants[0][4]
+        falseNorthing = UPS_Constants[0][5]
+
+    gridNorthing = northing
+    gridNorthing = gridNorthing - falseNorthing
+
+    mgrsLetters[2] = int(gridNorthing / ONEHT)
+
+    if mgrsLetters[2] > LETTERS['H']:
+        mgrsLetters[2] = mgrsLetters[2] + 1
+
+    if mgrsLetters[2] > LETTERS['N']:
+        mgrsLetters[2] = mgrsLetters[2] + 1
+
+    gridEasting = easting
+    gridEasting = gridEasting - falseEasting;
+    mgrsLetters[1] = ltr2LowValue + int(gridEasting / ONEHT)
+
+    if easting < TWOMIL:
+        if mgrsLetters[1] > LETTERS['L']:
+            mgrsLetters[1] = mgrsLetters[1] + 3
+
+        if mgrsLetters[1] > LETTERS['U']:
+            mgrsLetters[1] = mgrsLetters[1] + 2
+    else:
+        if mgrsLetters[1] > LETTERS['C']:
+            mgrsLetters[1] = mgrsLetters[1] + 2
+
+        if mgrsLetters[1] > LETTERS['H']:
+            mgrsLetters[1] = mgrsLetters[1] + 1
+
+        if mgrsLetters[1] > LETTERS['L']:
+            mgrsLetters[1] = mgrsLetters[1] + 3
+
+    return mgrsString(0, mgrsLetters, easting, northing, precision)
+
+def utmToMgrs():
+    pass
+
+
+def mgrsString(zone, mgrsLetters, easting, northing, precision):
+    """ Constructs an MGRS string from its component parts
+    @param zone - UTM zone
+    @param letters - MGRS coordinate string letters
+    @param easting - easting value
+    @param northing - northing value
+    @param precision - precision level of MGRS string
+    @returns - MGRS coordinate string
+    """
+    mrgs = ''
+    if zone:
+        mgrs = unicode(zone)
+    else:
+        mgrs = '  '
+
+    for i in xrange(3):
+        mgrs += ALPHABET[mgrsLetters[i]]
+
+    divisor = math.pow(10.0, 5 - precision)
+    easting = math.fmod(easting, 100000.0)
+    if easting >= 99999.5:
+        easting = 99999.0
+    east = int(easting / divisor)
+    mgrs += unicode(east)[:precision]
+
+    northing = math.fmod(northing, 100000.0)
+    if northing >= 99999.5:
+        northing = 99999.0
+    north = int(northing / divisor)
+    mgrs += unicode(north)[:precision]
+
+    return mgrs
+
+
+def _epsgForWgs(latitude, longitude):
+    """ Returns corresponding UTM or UPS EPSG code from WGS84 coordinates
+    @param latitude - latitude value
+    @param longitude - longitude value
+    @returns - EPSG code
+    """
+    if math.fabs(latitude) > 90 or math.fabs(longitude) > 180:
+        return None
+
+    if latitude <= -80 or latitude >= 84:
+        # Coordinates falls under UPS system
+        fuse = 61
+    else:
+        # Coordinates falls under UTM system
+        fuse = int(longitude / 6.0) + 30
+
+        # -180 special case
+        if fuse == 0:
+            fuse = 60
+
+    # Calculating North South
+    if latitude >= 0:
+        ns = 600
+    else:
+        ns = 700
+
+    return 32000 + ns + fuse
+
+
+def _hemisphere(latitude):
+    if latitude < 0:
+        return 'S'
+    else:
+        return 'N'
