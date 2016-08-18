@@ -255,7 +255,8 @@ def _mgrsString(zone, mgrsLetters, easting, northing, precision):
     """
     mrgs = ''
     if zone:
-        mgrs = unicode(zone)
+        tmp = unicode(zone)
+        mgrs = tmp.zfill(3 - len(tmp))
     else:
         mgrs = '  '
 
