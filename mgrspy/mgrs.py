@@ -102,7 +102,7 @@ def wgsToMgrs(latitude, longitude, precision):
         dst.ImportFromEPSG(epsg)
         ct = osr.CoordinateTransformation(src, dst)
         x, y, z = ct.TransformPoint(longitude, latitude)
-        mgrs = upsToMgrs(hemisphere, x, y, precision)
+        mgrs = _upsToMgrs(hemisphere, x, y, precision)
     else:
         # Convert to UTM
         hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
@@ -112,12 +112,12 @@ def wgsToMgrs(latitude, longitude, precision):
         dst.ImportFromEPSG(epsg)
         ct = osr.CoordinateTransformation(src, dst)
         x, y, z = ct.TransformPoint(longitude, latitude)
-        mgrs = utmToMgrs(zone, hemisphere, latitude, longitude, x, y, precision)
+        mgrs = _utmToMgrs(zone, hemisphere, latitude, longitude, x, y, precision)
 
     return mgrs
 
 
-def upsToMgrs(hemisphere, easting, northing, precision):
+def _upsToMgrs(hemisphere, easting, northing, precision):
     """ Converts UPS (hemisphere, easting, and northing) coordinates
     to an MGRS coordinate string.
 
@@ -191,10 +191,10 @@ def upsToMgrs(hemisphere, easting, northing, precision):
         if mgrsLetters[1] > LETTERS['L']:
             mgrsLetters[1] = mgrsLetters[1] + 3
 
-    return mgrsString(0, mgrsLetters, easting, northing, precision)
+    return _mgrsString(0, mgrsLetters, easting, northing, precision)
 
 
-def utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precision):
+def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precision):
     """ Calculates an MGRS coordinate string based on the UTM zone, latitude,
     easting and northing values.
 
@@ -241,10 +241,10 @@ def utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precisio
     if ltr2LowValue == LETTERS['J'] and mgrsLetters[1] > LETTERS['N']:
         letters[1] += 1
 
-    return mgrsString(zone, mgrsLetters, easting, northing, precision)
+    return _mgrsString(zone, mgrsLetters, easting, northing, precision)
 
 
-def mgrsString(zone, mgrsLetters, easting, northing, precision):
+def _mgrsString(zone, mgrsLetters, easting, northing, precision):
     """ Constructs an MGRS string from its component parts
     @param zone - UTM zone
     @param letters - MGRS coordinate string letters
