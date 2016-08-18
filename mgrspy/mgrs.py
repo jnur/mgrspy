@@ -99,17 +99,19 @@ def wgsToMgrs(latitude, longitude, precision):
     if (latitude < -80) or (latitude > 84):
         # Convert to UPS
         hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
+        print 'FROM WGS (UPS)', hemisphere, zone, epsg
         src = osr.SpatialReference()
         src.ImportFromEPSG(4326)
         dst = osr.SpatialReference()
         dst.ImportFromEPSG(epsg)
         ct = osr.CoordinateTransformation(src, dst)
         x, y, z = ct.TransformPoint(longitude, latitude)
+        print x, y
         mgrs = _upsToMgrs(hemisphere, x, y, precision)
     else:
         # Convert to UTM
         hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
-        print 'FROM WGS', hemisphere, zone, epsg
+        print 'FROM WGS (UTM)', hemisphere, zone, epsg
         src = osr.SpatialReference()
         src.ImportFromEPSG(4326)
         dst = osr.SpatialReference()
@@ -134,6 +136,7 @@ def mgrsToWgs(mgrs):
         print 'FROM MGRS', zone, hemisphere, easting, northing
     else:
         zone, hemisphere, easting, northing = _mgrsToUps(mgrs)
+        print 'FROM MGRS', zone, hemisphere, easting, northing
 
     epsg = _epsgForUtm(zone, hemisphere)
     print epsg
@@ -231,7 +234,64 @@ def _mgrsToUps(mgrs):
     @param mgrs - MGRS coordinate string
     @returns - tuple containing UTM zone, hemisphere, easting and northing
     """
-    pass
+    zone, mgrsLetters, easting, northing, precision = _breakMgrsString(mgrs)
+    print zone, mgrsLetters, easting, northing, precision
+
+    if zone != 0:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    if mgrsLetters[0] >= LETTERS['Y']:
+        hemisphere = 'N'
+
+        idx = mgrsLetters[0] - 22
+        ltr2LowValue = UPS_Constants[idx][1]
+        ltr2HighValue = UPS_Constants[idx][2]
+        ltr3HighValue = UPS_Constants[idx][3]
+        falseEasting = UPS_Constants[idx][4]
+        falseNorthing = UPS_Constants[idx][5]
+    else:
+        hemisphere = 'S'
+
+        ltr2LowValue = UPS_Constants[0][1]
+        ltr2HighValue = UPS_Constants[0][2]
+        ltr3HighValue = UPS_Constants[0][3]
+        falseEasting = UPS_Constants[0][4]
+        falseNorthing = UPS_Constants[0][5]
+
+    # Check that the second letter of the MGRS string is within the range
+    # of valid second letter values. Also check that the third letter is valid
+    invalid = [LETTERS['D'], LETTERS['E'], LETTERS['M'], LETTERS['N'], LETTERS['V'], LETTERS['W']]
+    if (mgrsLetters[1] < ltr2LowValue) or (mgrsLetters[1] > ltr2HighValue) or (mgrsLetters[1] in []) or (mgrsLetters[2] > ltr3HighValue):
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    gridNorthing = float(mgrsLetters[2] * ONEHT + falseNorthing)
+    if mgrsLetters[2] > LETTERS['I']:
+        gridNorthing = gridNorthing - ONEHT
+
+    if mgrsLetters[2] > LETTERS['O']:
+        gridNorthing = gridNorthing - ONEHT
+
+    gridEasting = float((mgrsLetters[1] - ltr2LowValue) * ONEHT + falseEasting)
+    if ltr2LowValue != LETTERS['A']:
+        if mgrsLetters[1] > LETTERS['L']:
+            gridEasting = gridEasting - 300000.0
+
+        if mgrsLetters[1] > LETTERS['U']:
+            gridEasting = gridEasting - 200000.0
+    else:
+        if mgrsLetters[1] > LETTERS['C']:
+            gridEasting = gridEasting - 200000.0
+
+        if mgrsLetters[1] > LETTERS['I']:
+            gridEasting = gridEasting - ONEHT
+
+        if mgrsLetters[1] > LETTERS['L']:
+            gridEasting = gridEasting - 300000.0
+
+    easting += gridEasting
+    northing += gridNorthing
+
+    return zone, hemisphere, easting, northing
 
 
 def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precision):
