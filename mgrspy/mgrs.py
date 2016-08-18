@@ -422,8 +422,11 @@ def _epsgForWgs(latitude, longitude):
     @returns - tuple containing hemisphere, UTM zone and EPSG code
     """
 
-    if math.fabs(latitude) > 90 or math.fabs(longitude) > 180:
-        return None
+    if math.fabs(latitude) > 90:
+        raise MgrsException('Latitude outside of valid range (-90 to 90 degrees).')
+
+    if longitude < -180 or longitude > 360:
+        return MgrsException('Longitude outside of valid range (-180 to 360 degrees).')
 
     # hemisphere
     if latitude < 0:
@@ -475,6 +478,12 @@ def _epsgForUtm(zone, hemisphere):
     @param hemisphere - hemisphere either 'N' or 'S'
     @returns - corresponding EPSG code
     """
+    if hemisphere not in ['N', 'S']:
+        raise MgrsException('Invalid hemisphere ("N" or "S").')
+
+    if zone < 0 or zone > 60:
+        raise MgrsException('UTM zone ouside valid range.')
+
     if hemisphere == 'N':
         ns = 600
     else:
