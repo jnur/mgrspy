@@ -31,17 +31,12 @@ import itertools
 from osgeo import osr
 
 
-ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-LETTERS = {l: c for c, l in enumerate(ALPHABET)}
+LETTERS = {l: c for c, l in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}
 
 ONEHT = 100000.0
 TWOMIL = 2000000.0
 
-MIN_EASTING = 100000
-MAX_EASTING = 900000
-MIN_NORTHING = 0
-MAX_NORTHING = 10000000
-MAX_PRECISION = 5                    # Maximum precision of easting & northing
+MAX_PRECISION = 5         # Maximum precision of easting & northing
 MIN_EAST_NORTH = 0
 MAX_EAST_NORTH = 4000000
 
@@ -74,6 +69,7 @@ Latitude_Bands = [(LETTERS['C'], 1100000.0, -72.0, -80.5, 0.0),
                   (LETTERS['W'], 7000000.0, 72.0, 64.0, 6000000.0),
                   (LETTERS['X'], 7900000.0, 84.5, 72.0, 6000000.0)]
 
+
 class MgrsException(Exception):
     pass
 
@@ -96,29 +92,19 @@ def wgsToMgrs(latitude, longitude, precision):
     if (precision < 0) or (precision > MAX_PRECISION):
         raise MgrsException('The precision must be between 0 and 5 inclusive.')
 
+    hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
+    src = osr.SpatialReference()
+    src.ImportFromEPSG(4326)
+    dst = osr.SpatialReference()
+    dst.ImportFromEPSG(epsg)
+    ct = osr.CoordinateTransformation(src, dst)
+    x, y, z = ct.TransformPoint(longitude, latitude)
+
     if (latitude < -80) or (latitude > 84):
         # Convert to UPS
-        hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
-        print 'FROM WGS (UPS)', hemisphere, zone, epsg
-        src = osr.SpatialReference()
-        src.ImportFromEPSG(4326)
-        dst = osr.SpatialReference()
-        dst.ImportFromEPSG(epsg)
-        ct = osr.CoordinateTransformation(src, dst)
-        x, y, z = ct.TransformPoint(longitude, latitude)
-        print x, y
         mgrs = _upsToMgrs(hemisphere, x, y, precision)
     else:
         # Convert to UTM
-        hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
-        print 'FROM WGS (UTM)', hemisphere, zone, epsg
-        src = osr.SpatialReference()
-        src.ImportFromEPSG(4326)
-        dst = osr.SpatialReference()
-        dst.ImportFromEPSG(epsg)
-        ct = osr.CoordinateTransformation(src, dst)
-        x, y, z = ct.TransformPoint(longitude, latitude)
-        print x, y
         mgrs = _utmToMgrs(zone, hemisphere, latitude, longitude, x, y, precision)
 
     return mgrs
@@ -133,13 +119,10 @@ def mgrsToWgs(mgrs):
     """
     if _checkZone(mgrs):
         zone, hemisphere, easting, northing = _mgrsToUtm(mgrs)
-        print 'FROM MGRS', zone, hemisphere, easting, northing
     else:
         zone, hemisphere, easting, northing = _mgrsToUps(mgrs)
-        print 'FROM MGRS', zone, hemisphere, easting, northing
 
     epsg = _epsgForUtm(zone, hemisphere)
-    print epsg
     src = osr.SpatialReference()
     src.ImportFromEPSG(epsg)
     dst = osr.SpatialReference()
@@ -235,7 +218,6 @@ def _mgrsToUps(mgrs):
     @returns - tuple containing UTM zone, hemisphere, easting and northing
     """
     zone, mgrsLetters, easting, northing, precision = _breakMgrsString(mgrs)
-    print zone, mgrsLetters, easting, northing, precision
 
     if zone != 0:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
@@ -352,7 +334,6 @@ def _mgrsToUtm(mgrs):
     @returns - tuple containing UTM zone, hemisphere, easting, northing
     """
     zone, mgrsLetters, easting, northing, precision = _breakMgrsString(mgrs)
-    print zone, mgrsLetters, easting, northing, precision
     if zone == 0:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
@@ -419,7 +400,7 @@ def _mgrsString(zone, mgrsLetters, easting, northing, precision):
         mgrs = '  '
 
     for i in xrange(3):
-        mgrs += ALPHABET[mgrsLetters[i]]
+        mgrs += LETTERS.keys()[LETTERS.values().index(mgrsLetters[i])]
 
     divisor = math.pow(10.0, 5 - precision)
     easting = math.fmod(round(easting, 1), 100000.0)
@@ -459,11 +440,6 @@ def _epsgForWgs(latitude, longitude):
         zone = 61
     else:
         # Coordinates falls under UTM system
-        #~ zone = int(longitude / 6.0) + 30
-#~
-        #~ # -180 special case
-        #~ if zone == 0:
-            #~ zone = 60
         if longitude < 180:
             zone = int(31 + (longitude / 6.0))
         else:
@@ -486,7 +462,7 @@ def _epsgForWgs(latitude, longitude):
         elif (latitude > 71) and (longitude > 32) and (longitude < 42):
             zone = 37
 
-    # North or South
+    # North or South hemisphere
     if latitude >= 0:
         ns = 600
     else:
@@ -496,6 +472,12 @@ def _epsgForWgs(latitude, longitude):
 
 
 def _epsgForUtm(zone, hemisphere):
+    """ Returen EPSG code for given UTM zone and hemisphere
+
+    @param zone - UTM zone
+    @param hemisphere - hemisphere either 'N' or 'S'
+    @returns - corresponding EPSG code
+    """
     if hemisphere == 'N':
         ns = 600
     else:
