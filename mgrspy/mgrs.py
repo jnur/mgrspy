@@ -26,6 +26,7 @@ __revision__ = '$Format:%H$'
 
 
 import math
+import itertools
 
 from osgeo import osr
 
@@ -44,12 +45,14 @@ MAX_PRECISION = 5                    # Maximum precision of easting & northing
 MIN_EAST_NORTH = 0
 MAX_EAST_NORTH = 4000000
 
+# letter, 2nd letter range - low, 2nd letter range - high, 3rd letter range - high (UPS), false easting based on 2nd letter, false northing based on 3rd letter
 UPS_Constants = {0: (LETTERS['A'], LETTERS['J'], LETTERS['Z'], LETTERS['Z'], 800000.0, 800000.0),
                  1: (LETTERS['B'], LETTERS['A'], LETTERS['R'], LETTERS['Z'], 2000000.0, 800000.0),
                  2: (LETTERS['Y'], LETTERS['J'], LETTERS['Z'], LETTERS['P'], 800000.0, 1300000.0),
                  3: (LETTERS['Z'], LETTERS['A'], LETTERS['J'], LETTERS['P'], 2000000.0, 1300000.0)
                 }
 
+# letter, minimum northing, upper latitude, lower latitude, northing offset
 Latitude_Bands = [(LETTERS['C'], 1100000.0, -72.0, -80.5, 0.0),
                   (LETTERS['D'], 2000000.0, -64.0, -72.0, 2000000.0),
                   (LETTERS['E'], 2800000.0, -56.0, -64.0, 2000000.0),
@@ -106,15 +109,42 @@ def wgsToMgrs(latitude, longitude, precision):
     else:
         # Convert to UTM
         hemisphere, zone, epsg = _epsgForWgs(latitude, longitude)
+        print 'FROM WGS', hemisphere, zone, epsg
         src = osr.SpatialReference()
         src.ImportFromEPSG(4326)
         dst = osr.SpatialReference()
         dst.ImportFromEPSG(epsg)
         ct = osr.CoordinateTransformation(src, dst)
         x, y, z = ct.TransformPoint(longitude, latitude)
+        print x, y
         mgrs = _utmToMgrs(zone, hemisphere, latitude, longitude, x, y, precision)
 
     return mgrs
+
+
+def mgrsToWgs(mgrs):
+    """ Converts an MGRS coordinate string to geodetic (latitude and longitude)
+    coordinates
+
+    @param mgrs - MGRS coordinate string
+    @returns - tuple containning latitude and longitude values
+    """
+    if _checkZone(mgrs):
+        zone, hemisphere, easting, northing = _mgrsToUtm(mgrs)
+        print 'FROM MGRS', zone, hemisphere, easting, northing
+    else:
+        zone, hemisphere, easting, northing = _mgrsToUps(mgrs)
+
+    epsg = _epsgForUtm(zone, hemisphere)
+    print epsg
+    src = osr.SpatialReference()
+    src.ImportFromEPSG(epsg)
+    dst = osr.SpatialReference()
+    dst.ImportFromEPSG(4326)
+    ct = osr.CoordinateTransformation(src, dst)
+    longitude, latitude, z = ct.TransformPoint(easting, northing)
+
+    return latitude, longitude
 
 
 def _upsToMgrs(hemisphere, easting, northing, precision):
@@ -194,6 +224,16 @@ def _upsToMgrs(hemisphere, easting, northing, precision):
     return _mgrsString(0, mgrsLetters, easting, northing, precision)
 
 
+def _mgrsToUps(mgrs):
+    """ Converts an MGRS coordinate string to UTM projection (zone, hemisphere,
+    easting and northing) coordinates
+
+    @param mgrs - MGRS coordinate string
+    @returns - tuple containing UTM zone, hemisphere, easting and northing
+    """
+    pass
+
+
 def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precision):
     """ Calculates an MGRS coordinate string based on the UTM zone, latitude,
     easting and northing values.
@@ -242,6 +282,64 @@ def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precisi
         letters[1] += 1
 
     return _mgrsString(zone, mgrsLetters, easting, northing, precision)
+
+
+def _mgrsToUtm(mgrs):
+    """ Converts an MGRS coordinate string to UTM projection (zone, hemisphere,
+    easting and northing) coordinates.
+
+    @param mgrs - MGRS coordinate string
+    @returns - tuple containing UTM zone, hemisphere, easting, northing
+    """
+    zone, mgrsLetters, easting, northing, precision = _breakMgrsString(mgrs)
+    print zone, mgrsLetters, easting, northing, precision
+    if zone == 0:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    if mgrsLetters == LETTERS['X'] and zone in [32, 34, 36]:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    if mgrsLetters[0] < LETTERS['N']:
+        hemisphere = 'S'
+    else:
+        hemisphere = 'N'
+
+    ltr2LowValue, ltr2HighValue, patternOffset = _gridValues(zone)
+
+    # Check that the second letter of the MGRS string is within the range
+    # of valid second letter values. Also check that the third letter is valid
+    if (mgrsLetters[1] < ltr2LowValue) or (mgrsLetters[1] > ltr2HighValue) or (mgrsLetters[2] > LETTERS['V']):
+        raise  MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    rowLetterNorthing = float(mgrsLetters[2] * ONEHT)
+    gridEasting = float((mgrsLetters[1] - ltr2LowValue + 1) * ONEHT)
+    if ltr2LowValue == LETTERS['J'] and mgrsLetters[1] > LETTERS['O']:
+        gridEasting = gridEasting - ONEHT
+
+    if mgrsLetters[2] > LETTERS['O']:
+        rowLetterNorthing = rowLetterNorthing - ONEHT
+
+    if mgrsLetters[2] > LETTERS['I']:
+        rowLetterNorthing = rowLetterNorthing - ONEHT
+
+    if rowLetterNorthing >= TWOMIL:
+        rowLetterNorthing = rowLetterNorthing - TWOMIL
+
+    minNorthing, northingOffset = _latitudeBandMinNorthing(mgrsLetters[0])
+
+    gridNorthing = rowLetterNorthing - patternOffset
+    if gridNorthing < 0:
+        gridNorthing += TWOMIL
+
+    gridNorthing += northingOffset
+
+    if gridNorthing < minNorthing:
+        gridNorthing += TWOMIL
+
+    easting += gridEasting
+    northing += gridNorthing
+
+    return zone, hemisphere, easting, northing
 
 
 def _mgrsString(zone, mgrsLetters, easting, northing, precision):
@@ -337,6 +435,18 @@ def _epsgForWgs(latitude, longitude):
     return hemisphere, zone, 32000 + ns + zone
 
 
+def _epsgForUtm(zone, hemisphere):
+    if hemisphere == 'N':
+        ns = 600
+    else:
+        ns = 700
+
+    if zone == 0:
+        zone = 61
+
+    return 32000 + ns + zone
+
+
 def _gridValues(zone):
     """ Sets the letter range used for the 2nd letter in the MGRS coordinate
     string, based on the set number of the UTM zone. It also sets the pattern
@@ -381,3 +491,104 @@ def _latitudeLetter(latitude):
     elif latitude > -80.5 and latitude < 72:
         idx = int(((latitude + 80.0) / 8.0) + 1.0e-12)
         return Latitude_Bands[idx][0]
+
+
+def _checkZone(mgrs):
+    """ Checks if MGRS coordinate string contains UTM zone definition
+
+    @param mgrs - MGRS coordinate string
+    @returns - True if zone is given, False otherwise
+    """
+    mgrs = mgrs.lstrip()
+    count = sum(1 for c in itertools.takewhile(str.isdigit, mgrs))
+    if count <= 2:
+        return count > 0
+    else:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+
+def _breakMgrsString(mgrs):
+    """ Breaks down an MGRS coordinate string into its component parts.
+
+    @param mgrs - MGRS coordinate string
+    @returns - tuple containing MGRS string componets: UTM zone,
+    MGRS coordinate string letters, easting, northing and precision
+    """
+    mgrs = mgrs.lstrip()
+    # Number of zone digits
+    count = sum(1 for c in itertools.takewhile(str.isdigit, mgrs))
+    if count <= 2:
+        if count > 0:
+            zone = int(mgrs[:2])
+            if zone < 1 or zone > 60:
+                raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+        else:
+            zone = 0
+    else:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    idx = count
+    # MGRS letters
+    count = sum(1 for c in itertools.takewhile(str.isalpha, itertools.islice(mgrs, idx, None)))
+    if count == 3:
+        a = ord('A')
+        invalid = [LETTERS['I'], LETTERS['O']]
+
+        mgrsLetters = []
+        ch = ord(mgrs[idx:idx + 1].upper()) - a
+        if ch in invalid:
+            raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+        idx += 1
+        mgrsLetters.append(ch)
+
+        ch = ord(mgrs[idx:idx + 1].upper()) - a
+        if ch in invalid:
+            raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+        idx += 1
+        mgrsLetters.append(ch)
+
+        ch = ord(mgrs[idx:idx + 1].upper()) - a
+        if ch in invalid:
+            raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+        idx += 1
+        mgrsLetters.append(ch)
+    else:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    # Easting and Northing
+    count = sum(1 for c in itertools.takewhile(str.isdigit, itertools.islice(mgrs, idx, None)))
+    if count <= 10 and count % 2 == 0:
+        precision = count / 2
+        if precision > 0:
+            easting = float(mgrs[idx:idx + precision])
+            northing = float(mgrs[idx + precision:])
+        else:
+            easting = 0
+            northing = 0
+    else:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    return zone, mgrsLetters, easting, northing, precision
+
+
+def _latitudeBandMinNorthing(letter):
+    """ Determines the minimum northing and northing offset
+    for given latitude band letter.
+
+    @param letter - latitude band letter
+    @returns - tuple containing minimum northing and northing offset
+    for that letter
+    """
+    if letter >= LETTERS['C'] and letter <= LETTERS['H']:
+        minNorthing = Latitude_Bands[letter - 2][1]
+        northingOffset = Latitude_Bands[letter - 2][4]
+    elif letter >= LETTERS['J'] and letter <= LETTERS['N']:
+        minNorthing = Latitude_Bands[letter - 3][1]
+        northingOffset = Latitude_Bands[letter - 3][4]
+    elif letter >= LETTERS['P'] and letter <= LETTERS['X']:
+        minNorthing = Latitude_Bands[letter - 4][1]
+        northingOffset = Latitude_Bands[letter - 4][4]
+    else:
+        raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+
+    return minNorthing, northingOffset
