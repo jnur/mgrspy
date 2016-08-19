@@ -74,7 +74,7 @@ class MgrsException(Exception):
     pass
 
 
-def wgsToMgrs(latitude, longitude, precision):
+def toMgrs(latitude, longitude, precision):
     """ Converts geodetic (latitude and longitude) coordinates to an MGRS
     coordinate string, according to the current ellipsoid parameters.
 
@@ -110,7 +110,7 @@ def wgsToMgrs(latitude, longitude, precision):
     return mgrs
 
 
-def mgrsToWgs(mgrs):
+def toWgs(mgrs):
     """ Converts an MGRS coordinate string to geodetic (latitude and longitude)
     coordinates
 
