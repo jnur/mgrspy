@@ -8,12 +8,12 @@ with codecs.open('README', encoding='utf-8') as f:
 
 
 setup(
-    name="mgrspy",
-    version="0.1",
+    name='mgrspy',
+    version='0.1.0',
     install_requires=['GDAL>=2.0.0'],
-    author="Alexander Bruy",
-    author_email="abruy@boundlessgeo.com",
-    description="Convert WGS84 coordinates to MGRS and back",
+    author='Alexander Bruy',
+    author_email='abruy@boundlessgeo.com',
+    description='Convert WGS84 coordinates to MGRS and back',
     long_description=(readme_text),
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -22,10 +22,10 @@ setup(
         'Operating System :: OS Independent',
         'Topic :: Scientific/Engineering :: GIS'
     ],
-    license="GPL",
-    keywords="mgrs wgs gis coordinate conversion",
+    license="GPLv2+",
+    keywords='mgrs wgs gis coordinate conversion',
     url='https://github.com/boundlessgeo/mgrspy',
     package_dir={'': '.'},
-    test_suite='test.suite',
+    test_suite='tests.suite',
     packages=['mgrspy',]
 )
