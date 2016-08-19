@@ -239,11 +239,11 @@ def _mgrsToUps(mgrs):
     else:
         hemisphere = 'S'
 
-        ltr2LowValue = UPS_Constants[0][1]
-        ltr2HighValue = UPS_Constants[0][2]
-        ltr3HighValue = UPS_Constants[0][3]
-        falseEasting = UPS_Constants[0][4]
-        falseNorthing = UPS_Constants[0][5]
+        ltr2LowValue = UPS_Constants[mgrsLetters[0]][1]
+        ltr2HighValue = UPS_Constants[mgrsLetters[0]][2]
+        ltr3HighValue = UPS_Constants[mgrsLetters[0]][3]
+        falseEasting = UPS_Constants[mgrsLetters[0]][4]
+        falseNorthing = UPS_Constants[mgrsLetters[0]][5]
 
     # Check that the second letter of the MGRS string is within the range
     # of valid second letter values. Also check that the third letter is valid
