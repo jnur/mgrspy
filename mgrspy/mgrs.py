@@ -40,7 +40,12 @@ MAX_PRECISION = 5         # Maximum precision of easting & northing
 MIN_EAST_NORTH = 0
 MAX_EAST_NORTH = 4000000
 
-# letter, 2nd letter range - low, 2nd letter range - high, 3rd letter range - high (UPS), false easting based on 2nd letter, false northing based on 3rd letter
+# letter,
+# 2nd letter range - low,
+# 2nd letter range - high,
+# 3rd letter range - high (UPS),
+# false easting based on 2nd letter,
+# false northing based on 3rd letter
 UPS_Constants = {0: (LETTERS['A'], LETTERS['J'], LETTERS['Z'], LETTERS['Z'], 800000.0, 800000.0),
                  1: (LETTERS['B'], LETTERS['A'], LETTERS['R'], LETTERS['Z'], 2000000.0, 800000.0),
                  2: (LETTERS['Y'], LETTERS['J'], LETTERS['Z'], LETTERS['P'], 800000.0, 1300000.0),
@@ -172,9 +177,9 @@ def _upsToMgrs(hemisphere, easting, northing, precision):
         else:
             mgrsLetters[0] = LETTERS['A']
 
-        ltr2LowValue = UPS_Constants[0][1]
-        falseEasting = UPS_Constants[0][4]
-        falseNorthing = UPS_Constants[0][5]
+        ltr2LowValue = UPS_Constants[mgrsLetters[0]][1]
+        falseEasting = UPS_Constants[mgrsLetters[0]][4]
+        falseNorthing = UPS_Constants[mgrsLetters[0]][5]
 
     gridNorthing = northing
     gridNorthing = gridNorthing - falseNorthing
@@ -243,7 +248,7 @@ def _mgrsToUps(mgrs):
     # Check that the second letter of the MGRS string is within the range
     # of valid second letter values. Also check that the third letter is valid
     invalid = [LETTERS['D'], LETTERS['E'], LETTERS['M'], LETTERS['N'], LETTERS['V'], LETTERS['W']]
-    if (mgrsLetters[1] < ltr2LowValue) or (mgrsLetters[1] > ltr2HighValue) or (mgrsLetters[1] in []) or (mgrsLetters[2] > ltr3HighValue):
+    if (mgrsLetters[1] < ltr2LowValue) or (mgrsLetters[1] > ltr2HighValue) or (mgrsLetters[1] in [invalid]) or (mgrsLetters[2] > ltr3HighValue):
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
     gridNorthing = float(mgrsLetters[2] * ONEHT + falseNorthing)
