@@ -74,7 +74,7 @@ class MgrsException(Exception):
     pass
 
 
-def toMgrs(latitude, longitude, precision):
+def toMgrs(latitude, longitude, precision=5):
     """ Converts geodetic (latitude and longitude) coordinates to an MGRS
     coordinate string, according to the current ellipsoid parameters.
 
