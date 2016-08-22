@@ -31,7 +31,7 @@ import itertools
 from osgeo import osr
 
 
-LETTERS = {l: c for c, l in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}
+ALPHABET = {l: c for c, l in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}
 
 ONEHT = 100000.0
 TWOMIL = 2000000.0
@@ -46,33 +46,33 @@ MAX_EAST_NORTH = 4000000
 # 3rd letter range - high (UPS),
 # false easting based on 2nd letter,
 # false northing based on 3rd letter
-UPS_Constants = {0: (LETTERS['A'], LETTERS['J'], LETTERS['Z'], LETTERS['Z'], 800000.0, 800000.0),
-                 1: (LETTERS['B'], LETTERS['A'], LETTERS['R'], LETTERS['Z'], 2000000.0, 800000.0),
-                 2: (LETTERS['Y'], LETTERS['J'], LETTERS['Z'], LETTERS['P'], 800000.0, 1300000.0),
-                 3: (LETTERS['Z'], LETTERS['A'], LETTERS['J'], LETTERS['P'], 2000000.0, 1300000.0)
+UPS_CONSTANTS = {0: (ALPHABET['A'], ALPHABET['J'], ALPHABET['Z'], ALPHABET['Z'], 800000.0, 800000.0),
+                 1: (ALPHABET['B'], ALPHABET['A'], ALPHABET['R'], ALPHABET['Z'], 2000000.0, 800000.0),
+                 2: (ALPHABET['Y'], ALPHABET['J'], ALPHABET['Z'], ALPHABET['P'], 800000.0, 1300000.0),
+                 3: (ALPHABET['Z'], ALPHABET['A'], ALPHABET['J'], ALPHABET['P'], 2000000.0, 1300000.0)
                 }
 
 # letter, minimum northing, upper latitude, lower latitude, northing offset
-Latitude_Bands = [(LETTERS['C'], 1100000.0, -72.0, -80.5, 0.0),
-                  (LETTERS['D'], 2000000.0, -64.0, -72.0, 2000000.0),
-                  (LETTERS['E'], 2800000.0, -56.0, -64.0, 2000000.0),
-                  (LETTERS['F'], 3700000.0, -48.0, -56.0, 2000000.0),
-                  (LETTERS['G'], 4600000.0, -40.0, -48.0, 4000000.0),
-                  (LETTERS['H'], 5500000.0, -32.0, -40.0, 4000000.0),
-                  (LETTERS['J'], 6400000.0, -24.0, -32.0, 6000000.0),
-                  (LETTERS['K'], 7300000.0, -16.0, -24.0, 6000000.0),
-                  (LETTERS['L'], 8200000.0, -8.0, -16.0, 8000000.0),
-                  (LETTERS['M'], 9100000.0, 0.0, -8.0, 8000000.0),
-                  (LETTERS['N'], 0.0, 8.0, 0.0, 0.0),
-                  (LETTERS['P'], 800000.0, 16.0, 8.0, 0.0),
-                  (LETTERS['Q'], 1700000.0, 24.0, 16.0, 0.0),
-                  (LETTERS['R'], 2600000.0, 32.0, 24.0, 2000000.0),
-                  (LETTERS['S'], 3500000.0, 40.0, 32.0, 2000000.0),
-                  (LETTERS['T'], 4400000.0, 48.0, 40.0, 4000000.0),
-                  (LETTERS['U'], 5300000.0, 56.0, 48.0, 4000000.0),
-                  (LETTERS['V'], 6200000.0, 64.0, 56.0, 6000000.0),
-                  (LETTERS['W'], 7000000.0, 72.0, 64.0, 6000000.0),
-                  (LETTERS['X'], 7900000.0, 84.5, 72.0, 6000000.0)]
+LATITUDE_BANDS = [(ALPHABET['C'], 1100000.0, -72.0, -80.5, 0.0),
+                  (ALPHABET['D'], 2000000.0, -64.0, -72.0, 2000000.0),
+                  (ALPHABET['E'], 2800000.0, -56.0, -64.0, 2000000.0),
+                  (ALPHABET['F'], 3700000.0, -48.0, -56.0, 2000000.0),
+                  (ALPHABET['G'], 4600000.0, -40.0, -48.0, 4000000.0),
+                  (ALPHABET['H'], 5500000.0, -32.0, -40.0, 4000000.0),
+                  (ALPHABET['J'], 6400000.0, -24.0, -32.0, 6000000.0),
+                  (ALPHABET['K'], 7300000.0, -16.0, -24.0, 6000000.0),
+                  (ALPHABET['L'], 8200000.0, -8.0, -16.0, 8000000.0),
+                  (ALPHABET['M'], 9100000.0, 0.0, -8.0, 8000000.0),
+                  (ALPHABET['N'], 0.0, 8.0, 0.0, 0.0),
+                  (ALPHABET['P'], 800000.0, 16.0, 8.0, 0.0),
+                  (ALPHABET['Q'], 1700000.0, 24.0, 16.0, 0.0),
+                  (ALPHABET['R'], 2600000.0, 32.0, 24.0, 2000000.0),
+                  (ALPHABET['S'], 3500000.0, 40.0, 32.0, 2000000.0),
+                  (ALPHABET['T'], 4400000.0, 48.0, 40.0, 4000000.0),
+                  (ALPHABET['U'], 5300000.0, 56.0, 48.0, 4000000.0),
+                  (ALPHABET['V'], 6200000.0, 64.0, 56.0, 6000000.0),
+                  (ALPHABET['W'], 7000000.0, 72.0, 64.0, 6000000.0),
+                  (ALPHABET['X'], 7900000.0, 84.5, 72.0, 6000000.0)]
 
 
 class MgrsException(Exception):
@@ -160,59 +160,59 @@ def _upsToMgrs(hemisphere, easting, northing, precision):
     if (precision < 0) or (precision > MAX_PRECISION):
         raise MgrsException('The precision must be between 0 and 5 inclusive.')
 
-    mgrsLetters = [None, None, None]
+    letters = [None, None, None]
     if hemisphere == 'N':
         if easting >= TWOMIL:
-            mgrsLetters[0] = LETTERS['Z']
+            letters[0] = ALPHABET['Z']
         else:
-            mgrsLetters[0] = LETTERS['Y']
+            letters[0] = ALPHABET['Y']
 
-        idx = mgrsLetters[0] - 22
-        ltr2LowValue = UPS_Constants[idx][1]
-        falseEasting = UPS_Constants[idx][4]
-        falseNorthing = UPS_Constants[idx][5]
+        idx = letters[0] - 22
+        ltr2LowValue = UPS_CONSTANTS[idx][1]
+        falseEasting = UPS_CONSTANTS[idx][4]
+        falseNorthing = UPS_CONSTANTS[idx][5]
     else:
         if easting >= TWOMIL:
-            mgrsLetters[0] = LETTERS['B']
+            letters[0] = ALPHABET['B']
         else:
-            mgrsLetters[0] = LETTERS['A']
+            letters[0] = ALPHABET['A']
 
-        ltr2LowValue = UPS_Constants[mgrsLetters[0]][1]
-        falseEasting = UPS_Constants[mgrsLetters[0]][4]
-        falseNorthing = UPS_Constants[mgrsLetters[0]][5]
+        ltr2LowValue = UPS_CONSTANTS[letters[0]][1]
+        falseEasting = UPS_CONSTANTS[letters[0]][4]
+        falseNorthing = UPS_CONSTANTS[letters[0]][5]
 
     gridNorthing = northing
     gridNorthing = gridNorthing - falseNorthing
 
-    mgrsLetters[2] = int(gridNorthing / ONEHT)
+    letters[2] = int(gridNorthing / ONEHT)
 
-    if mgrsLetters[2] > LETTERS['H']:
-        mgrsLetters[2] = mgrsLetters[2] + 1
+    if letters[2] > ALPHABET['H']:
+        letters[2] = letters[2] + 1
 
-    if mgrsLetters[2] > LETTERS['N']:
-        mgrsLetters[2] = mgrsLetters[2] + 1
+    if letters[2] > ALPHABET['N']:
+        letters[2] = letters[2] + 1
 
     gridEasting = easting
     gridEasting = gridEasting - falseEasting;
-    mgrsLetters[1] = ltr2LowValue + int(gridEasting / ONEHT)
+    letters[1] = ltr2LowValue + int(gridEasting / ONEHT)
 
     if easting < TWOMIL:
-        if mgrsLetters[1] > LETTERS['L']:
-            mgrsLetters[1] = mgrsLetters[1] + 3
+        if letters[1] > ALPHABET['L']:
+            letters[1] = letters[1] + 3
 
-        if mgrsLetters[1] > LETTERS['U']:
-            mgrsLetters[1] = mgrsLetters[1] + 2
+        if letters[1] > ALPHABET['U']:
+            letters[1] = letters[1] + 2
     else:
-        if mgrsLetters[1] > LETTERS['C']:
-            mgrsLetters[1] = mgrsLetters[1] + 2
+        if letters[1] > ALPHABET['C']:
+            letters[1] = letters[1] + 2
 
-        if mgrsLetters[1] > LETTERS['H']:
-            mgrsLetters[1] = mgrsLetters[1] + 1
+        if letters[1] > ALPHABET['H']:
+            letters[1] = letters[1] + 1
 
-        if mgrsLetters[1] > LETTERS['L']:
-            mgrsLetters[1] = mgrsLetters[1] + 3
+        if letters[1] > ALPHABET['L']:
+            letters[1] = letters[1] + 3
 
-    return _mgrsString(0, mgrsLetters, easting, northing, precision)
+    return _mgrsString(0, letters, easting, northing, precision)
 
 
 def _mgrsToUps(mgrs):
@@ -222,57 +222,57 @@ def _mgrsToUps(mgrs):
     @param mgrs - MGRS coordinate string
     @returns - tuple containing UTM zone, hemisphere, easting and northing
     """
-    zone, mgrsLetters, easting, northing, precision = _breakMgrsString(mgrs)
+    zone, letters, easting, northing, precision = _breakMgrsString(mgrs)
 
     if zone != 0:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
-    if mgrsLetters[0] >= LETTERS['Y']:
+    if letters[0] >= ALPHABET['Y']:
         hemisphere = 'N'
 
-        idx = mgrsLetters[0] - 22
-        ltr2LowValue = UPS_Constants[idx][1]
-        ltr2HighValue = UPS_Constants[idx][2]
-        ltr3HighValue = UPS_Constants[idx][3]
-        falseEasting = UPS_Constants[idx][4]
-        falseNorthing = UPS_Constants[idx][5]
+        idx = letters[0] - 22
+        ltr2LowValue = UPS_CONSTANTS[idx][1]
+        ltr2HighValue = UPS_CONSTANTS[idx][2]
+        ltr3HighValue = UPS_CONSTANTS[idx][3]
+        falseEasting = UPS_CONSTANTS[idx][4]
+        falseNorthing = UPS_CONSTANTS[idx][5]
     else:
         hemisphere = 'S'
 
-        ltr2LowValue = UPS_Constants[mgrsLetters[0]][1]
-        ltr2HighValue = UPS_Constants[mgrsLetters[0]][2]
-        ltr3HighValue = UPS_Constants[mgrsLetters[0]][3]
-        falseEasting = UPS_Constants[mgrsLetters[0]][4]
-        falseNorthing = UPS_Constants[mgrsLetters[0]][5]
+        ltr2LowValue = UPS_CONSTANTS[letters[0]][1]
+        ltr2HighValue = UPS_CONSTANTS[letters[0]][2]
+        ltr3HighValue = UPS_CONSTANTS[letters[0]][3]
+        falseEasting = UPS_CONSTANTS[letters[0]][4]
+        falseNorthing = UPS_CONSTANTS[letters[0]][5]
 
     # Check that the second letter of the MGRS string is within the range
     # of valid second letter values. Also check that the third letter is valid
-    invalid = [LETTERS['D'], LETTERS['E'], LETTERS['M'], LETTERS['N'], LETTERS['V'], LETTERS['W']]
-    if (mgrsLetters[1] < ltr2LowValue) or (mgrsLetters[1] > ltr2HighValue) or (mgrsLetters[1] in [invalid]) or (mgrsLetters[2] > ltr3HighValue):
+    invalid = [ALPHABET['D'], ALPHABET['E'], ALPHABET['M'], ALPHABET['N'], ALPHABET['V'], ALPHABET['W']]
+    if (letters[1] < ltr2LowValue) or (letters[1] > ltr2HighValue) or (letters[1] in [invalid]) or (letters[2] > ltr3HighValue):
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
-    gridNorthing = float(mgrsLetters[2] * ONEHT + falseNorthing)
-    if mgrsLetters[2] > LETTERS['I']:
+    gridNorthing = float(letters[2] * ONEHT + falseNorthing)
+    if letters[2] > ALPHABET['I']:
         gridNorthing = gridNorthing - ONEHT
 
-    if mgrsLetters[2] > LETTERS['O']:
+    if letters[2] > ALPHABET['O']:
         gridNorthing = gridNorthing - ONEHT
 
-    gridEasting = float((mgrsLetters[1] - ltr2LowValue) * ONEHT + falseEasting)
-    if ltr2LowValue != LETTERS['A']:
-        if mgrsLetters[1] > LETTERS['L']:
+    gridEasting = float((letters[1] - ltr2LowValue) * ONEHT + falseEasting)
+    if ltr2LowValue != ALPHABET['A']:
+        if letters[1] > ALPHABET['L']:
             gridEasting = gridEasting - 300000.0
 
-        if mgrsLetters[1] > LETTERS['U']:
+        if letters[1] > ALPHABET['U']:
             gridEasting = gridEasting - 200000.0
     else:
-        if mgrsLetters[1] > LETTERS['C']:
+        if letters[1] > ALPHABET['C']:
             gridEasting = gridEasting - 200000.0
 
-        if mgrsLetters[1] > LETTERS['I']:
+        if letters[1] > ALPHABET['I']:
             gridEasting = gridEasting - ONEHT
 
-        if mgrsLetters[1] > LETTERS['L']:
+        if letters[1] > ALPHABET['L']:
             gridEasting = gridEasting - 300000.0
 
     easting += gridEasting
@@ -305,7 +305,7 @@ def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precisi
 
     ltr2LowValue, ltr2HighValue, patternOffset = _gridValues(zone)
 
-    mgrsLetters = [_latitudeLetter(latitude), None, None]
+    letters = [_latitudeLetter(latitude), None, None]
 
     while northing >= TWOMIL:
         northing = northing - TWOMIL
@@ -314,21 +314,21 @@ def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precisi
     if northing >= TWOMIL:
         northing = northing - TWOMIL
 
-    mgrsLetters[2] = int(northing / ONEHT)
-    if mgrsLetters[2] > LETTERS['H']:
-        mgrsLetters[2] += 1
+    letters[2] = int(northing / ONEHT)
+    if letters[2] > ALPHABET['H']:
+        letters[2] += 1
 
-    if mgrsLetters[2] > LETTERS['N']:
-        mgrsLetters[2] += 1
+    if letters[2] > ALPHABET['N']:
+        letters[2] += 1
 
-    if ((mgrsLetters[0] == LETTERS['V']) and (zone == 31)) and (easting == 500000.0):
+    if ((letters[0] == ALPHABET['V']) and (zone == 31)) and (easting == 500000.0):
         easting = easting - 1.0  # Substract 1 meter
 
-    mgrsLetters[1] = ltr2LowValue + int((easting / ONEHT) - 1)
-    if ltr2LowValue == LETTERS['J'] and mgrsLetters[1] > LETTERS['N']:
-        letters[1] += 1
+    letters[1] = ltr2LowValue + int((easting / ONEHT) - 1)
+    if ltr2LowValue == ALPHABET['J'] and letters[1] > ALPHABET['N']:
+        ALPHABET[1] += 1
 
-    return _mgrsString(zone, mgrsLetters, easting, northing, precision)
+    return _mgrsString(zone, letters, easting, northing, precision)
 
 
 def _mgrsToUtm(mgrs):
@@ -338,14 +338,14 @@ def _mgrsToUtm(mgrs):
     @param mgrs - MGRS coordinate string
     @returns - tuple containing UTM zone, hemisphere, easting, northing
     """
-    zone, mgrsLetters, easting, northing, precision = _breakMgrsString(mgrs)
+    zone, letters, easting, northing, precision = _breakMgrsString(mgrs)
     if zone == 0:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
-    if mgrsLetters == LETTERS['X'] and zone in [32, 34, 36]:
+    if letters == ALPHABET['X'] and zone in [32, 34, 36]:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
-    if mgrsLetters[0] < LETTERS['N']:
+    if letters[0] < ALPHABET['N']:
         hemisphere = 'S'
     else:
         hemisphere = 'N'
@@ -354,24 +354,24 @@ def _mgrsToUtm(mgrs):
 
     # Check that the second letter of the MGRS string is within the range
     # of valid second letter values. Also check that the third letter is valid
-    if (mgrsLetters[1] < ltr2LowValue) or (mgrsLetters[1] > ltr2HighValue) or (mgrsLetters[2] > LETTERS['V']):
+    if (letters[1] < ltr2LowValue) or (letters[1] > ltr2HighValue) or (letters[2] > ALPHABET['V']):
         raise  MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
-    rowLetterNorthing = float(mgrsLetters[2] * ONEHT)
-    gridEasting = float((mgrsLetters[1] - ltr2LowValue + 1) * ONEHT)
-    if ltr2LowValue == LETTERS['J'] and mgrsLetters[1] > LETTERS['O']:
+    rowLetterNorthing = float(letters[2] * ONEHT)
+    gridEasting = float((letters[1] - ltr2LowValue + 1) * ONEHT)
+    if ltr2LowValue == ALPHABET['J'] and letters[1] > ALPHABET['O']:
         gridEasting = gridEasting - ONEHT
 
-    if mgrsLetters[2] > LETTERS['O']:
+    if letters[2] > ALPHABET['O']:
         rowLetterNorthing = rowLetterNorthing - ONEHT
 
-    if mgrsLetters[2] > LETTERS['I']:
+    if letters[2] > ALPHABET['I']:
         rowLetterNorthing = rowLetterNorthing - ONEHT
 
     if rowLetterNorthing >= TWOMIL:
         rowLetterNorthing = rowLetterNorthing - TWOMIL
 
-    minNorthing, northingOffset = _latitudeBandMinNorthing(mgrsLetters[0])
+    minNorthing, northingOffset = _latitudeBandMinNorthing(letters[0])
 
     gridNorthing = rowLetterNorthing - patternOffset
     if gridNorthing < 0:
@@ -388,10 +388,10 @@ def _mgrsToUtm(mgrs):
     return zone, hemisphere, easting, northing
 
 
-def _mgrsString(zone, mgrsLetters, easting, northing, precision):
+def _mgrsString(zone, letters, easting, northing, precision):
     """ Constructs an MGRS string from its component parts
     @param zone - UTM zone
-    @param letters - MGRS coordinate string letters
+    @param ALPHABET - MGRS coordinate string ALPHABET
     @param easting - easting value
     @param northing - northing value
     @param precision - precision level of MGRS string
@@ -405,7 +405,7 @@ def _mgrsString(zone, mgrsLetters, easting, northing, precision):
         mgrs = '  '
 
     for i in xrange(3):
-        mgrs += LETTERS.keys()[LETTERS.values().index(mgrsLetters[i])]
+        mgrs += ALPHABET.keys()[ALPHABET.values().index(letters[i])]
 
     easting = math.fmod(round(easting, 1), 100000.0)
     if easting >= 99999.5:
@@ -516,14 +516,14 @@ def _gridValues(zone):
         setNumber = 6
 
     if setNumber in [1, 4]:
-        ltr2LowValue = LETTERS['A']
-        ltr2HighValue = LETTERS['H']
+        ltr2LowValue = ALPHABET['A']
+        ltr2HighValue = ALPHABET['H']
     elif setNumber in [2, 5]:
-        ltr2LowValue = LETTERS['J']
-        ltr2HighValue = LETTERS['R']
+        ltr2LowValue = ALPHABET['J']
+        ltr2HighValue = ALPHABET['R']
     elif setNumber in [3, 6]:
-        ltr2LowValue = LETTERS['S']
-        ltr2HighValue = LETTERS['Z']
+        ltr2LowValue = ALPHABET['S']
+        ltr2HighValue = ALPHABET['Z']
 
     if setNumber % 2:
         patternOffset = 0.0
@@ -540,10 +540,10 @@ def _latitudeLetter(latitude):
     @returns - latitude band letter
     """
     if latitude >= 72 and latitude < 84.5:
-        return LETTERS['X']
+        return ALPHABET['X']
     elif latitude > -80.5 and latitude < 72:
         idx = int(((latitude + 80.0) / 8.0) + 1.0e-12)
-        return Latitude_Bands[idx][0]
+        return LATITUDE_BANDS[idx][0]
 
 
 def _checkZone(mgrs):
@@ -565,7 +565,7 @@ def _breakMgrsString(mgrs):
 
     @param mgrs - MGRS coordinate string
     @returns - tuple containing MGRS string componets: UTM zone,
-    MGRS coordinate string letters, easting, northing and precision
+    MGRS coordinate string ALPHABET, easting, northing and precision
     """
     mgrs = mgrs.lstrip()
     # Number of zone digits
@@ -581,30 +581,30 @@ def _breakMgrsString(mgrs):
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
     idx = count
-    # MGRS letters
+    # MGRS ALPHABET
     count = sum(1 for c in itertools.takewhile(str.isalpha, itertools.islice(mgrs, idx, None)))
     if count == 3:
         a = ord('A')
-        invalid = [LETTERS['I'], LETTERS['O']]
+        invalid = [ALPHABET['I'], ALPHABET['O']]
 
-        mgrsLetters = []
+        letters = []
         ch = ord(mgrs[idx:idx + 1].upper()) - a
         if ch in invalid:
             raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
         idx += 1
-        mgrsLetters.append(ch)
-
-        ch = ord(mgrs[idx:idx + 1].upper()) - a
-        if ch in invalid:
-            raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
-        idx += 1
-        mgrsLetters.append(ch)
+        letters.append(ch)
 
         ch = ord(mgrs[idx:idx + 1].upper()) - a
         if ch in invalid:
             raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
         idx += 1
-        mgrsLetters.append(ch)
+        letters.append(ch)
+
+        ch = ord(mgrs[idx:idx + 1].upper()) - a
+        if ch in invalid:
+            raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
+        idx += 1
+        letters.append(ch)
     else:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
@@ -621,7 +621,7 @@ def _breakMgrsString(mgrs):
     else:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
-    return zone, mgrsLetters, easting, northing, precision
+    return zone, letters, easting, northing, precision
 
 
 def _latitudeBandMinNorthing(letter):
@@ -632,15 +632,15 @@ def _latitudeBandMinNorthing(letter):
     @returns - tuple containing minimum northing and northing offset
     for that letter
     """
-    if letter >= LETTERS['C'] and letter <= LETTERS['H']:
-        minNorthing = Latitude_Bands[letter - 2][1]
-        northingOffset = Latitude_Bands[letter - 2][4]
-    elif letter >= LETTERS['J'] and letter <= LETTERS['N']:
-        minNorthing = Latitude_Bands[letter - 3][1]
-        northingOffset = Latitude_Bands[letter - 3][4]
-    elif letter >= LETTERS['P'] and letter <= LETTERS['X']:
-        minNorthing = Latitude_Bands[letter - 4][1]
-        northingOffset = Latitude_Bands[letter - 4][4]
+    if letter >= ALPHABET['C'] and letter <= ALPHABET['H']:
+        minNorthing = LATITUDE_BANDS[letter - 2][1]
+        northingOffset = LATITUDE_BANDS[letter - 2][4]
+    elif letter >= ALPHABET['J'] and letter <= ALPHABET['N']:
+        minNorthing = LATITUDE_BANDS[letter - 3][1]
+        northingOffset = LATITUDE_BANDS[letter - 3][4]
+    elif letter >= ALPHABET['P'] and letter <= ALPHABET['X']:
+        minNorthing = LATITUDE_BANDS[letter - 4][1]
+        northingOffset = LATITUDE_BANDS[letter - 4][4]
     else:
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
