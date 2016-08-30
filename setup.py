@@ -10,7 +10,7 @@ with codecs.open('README', encoding='utf-8') as f:
 setup(
     name='mgrspy',
     version='0.1.0',
-    install_requires=['GDAL>=2.0.0'],
+    install_requires=['GDAL>=1.10.0'],
     author='Alexander Bruy',
     author_email='abruy@boundlessgeo.com',
     description='Convert WGS84 coordinates to MGRS and back',
