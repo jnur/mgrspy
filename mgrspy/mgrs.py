@@ -553,7 +553,7 @@ def _checkZone(mgrs):
     @returns - True if zone is given, False otherwise
     """
     mgrs = mgrs.lstrip()
-    count = sum(1 for c in itertools.takewhile(str.isdigit, mgrs))
+    count = sum(1 for c in itertools.takewhile(unicode.isdigit, mgrs))
     if count <= 2:
         return count > 0
     else:
@@ -569,7 +569,7 @@ def _breakMgrsString(mgrs):
     """
     mgrs = mgrs.lstrip()
     # Number of zone digits
-    count = sum(1 for c in itertools.takewhile(str.isdigit, mgrs))
+    count = sum(1 for c in itertools.takewhile(unicode.isdigit, mgrs))
     if count <= 2:
         if count > 0:
             zone = int(mgrs[:2])
@@ -582,7 +582,7 @@ def _breakMgrsString(mgrs):
 
     idx = count
     # MGRS ALPHABET
-    count = sum(1 for c in itertools.takewhile(str.isalpha, itertools.islice(mgrs, idx, None)))
+    count = sum(1 for c in itertools.takewhile(unicode.isalpha, itertools.islice(mgrs, idx, None)))
     if count == 3:
         a = ord('A')
         invalid = [ALPHABET['I'], ALPHABET['O']]
@@ -609,7 +609,7 @@ def _breakMgrsString(mgrs):
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
     # Easting and Northing
-    count = sum(1 for c in itertools.takewhile(str.isdigit, itertools.islice(mgrs, idx, None)))
+    count = sum(1 for c in itertools.takewhile(unicode.isdigit, itertools.islice(mgrs, idx, None)))
     if count <= 10 and count % 2 == 0:
         precision = count / 2
         if precision > 0:
