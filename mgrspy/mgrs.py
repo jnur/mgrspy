@@ -326,7 +326,7 @@ def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precisi
 
     letters[1] = ltr2LowValue + int((easting / ONEHT) - 1)
     if ltr2LowValue == ALPHABET['J'] and letters[1] > ALPHABET['N']:
-        ALPHABET[1] += 1
+        letters[1] += 1
 
     return _mgrsString(zone, letters, easting, northing, precision)
 
@@ -391,7 +391,7 @@ def _mgrsToUtm(mgrs):
 def _mgrsString(zone, letters, easting, northing, precision):
     """ Constructs an MGRS string from its component parts
     @param zone - UTM zone
-    @param ALPHABET - MGRS coordinate string ALPHABET
+    @param letters - MGRS coordinate string letters
     @param easting - easting value
     @param northing - northing value
     @param precision - precision level of MGRS string
@@ -565,7 +565,7 @@ def _breakMgrsString(mgrs):
 
     @param mgrs - MGRS coordinate string
     @returns - tuple containing MGRS string componets: UTM zone,
-    MGRS coordinate string ALPHABET, easting, northing and precision
+    MGRS coordinate string letters, easting, northing and precision
     """
     mgrs = mgrs.lstrip()
     # Number of zone digits
@@ -581,7 +581,7 @@ def _breakMgrsString(mgrs):
         raise MgrsException('An MGRS string error: string too long, too short, or badly formed')
 
     idx = count
-    # MGRS ALPHABET
+    # MGRS letters
     count = sum(1 for c in itertools.takewhile(unicode.isalpha, itertools.islice(mgrs, idx, None)))
     if count == 3:
         a = ord('A')
