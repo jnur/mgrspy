@@ -407,12 +407,14 @@ def _mgrsString(zone, letters, easting, northing, precision):
     for i in xrange(3):
         mgrs += ALPHABET.keys()[ALPHABET.values().index(letters[i])]
 
-    easting = math.fmod(round(easting, 1), 100000.0)
+    #easting = math.fmod(round(easting, 1), 100000.0)
+    easting = math.fmod(easting + 1e-8, 100000.0)
     if easting >= 99999.5:
         easting = 99999.0
     mgrs += unicode(int(easting)).rjust(5, '0')[:precision]
 
-    northing = math.fmod(round(northing, 1), 100000.0)
+    #northing = math.fmod(round(northing, 1), 100000.0)
+    northing = math.fmod(northing + 1e-8, 100000.0)
     if northing >= 99999.5:
         northing = 99999.0
     mgrs += unicode(int(northing)).rjust(5, '0')[:precision]
