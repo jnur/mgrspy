@@ -75,6 +75,7 @@ class UtilsTest(unittest.TestCase):
         with self.assertRaises(mgrs.MgrsException):
             hemisphere, zone, epsg = mgrs._epsgForWgs(-95, 60)
 
+
     def testEpsgFromUtmParameters(self):
         epsg = mgrs._epsgForUtm(31, 'N')
         self.assertEqual(epsg, 32631)
@@ -108,6 +109,7 @@ class UtilsTest(unittest.TestCase):
         with self.assertRaises(mgrs.MgrsException):
             epsg = mgrs._epsgForUtm(62, 'S')
 
+
     def testCheckZone(self):
         self.assertTrue(mgrs._checkZone('02HKK5607125582'), True)
         self.assertTrue(mgrs._checkZone('02HKK560255'), True)
@@ -125,6 +127,7 @@ class UtilsTest(unittest.TestCase):
         # zone with 3 digits
         with self.assertRaises(mgrs.MgrsException):
             mgrs._checkZone('181SUJ2338308450')
+
 
     def testMgrsStringBreak(self):
         zone, letters, easting, northing, precision = mgrs._breakMgrsString('18SUJ2338308450')

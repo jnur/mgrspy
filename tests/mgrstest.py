@@ -62,11 +62,13 @@ class MgrsTest(unittest.TestCase):
         self.assertAlmostEqual(lat, -88.51999757416547)
         self.assertAlmostEqual(lon, -66.49017323008184)
 
+
     def testSpecialCases(self):
         self.assertEqual(mgrs.toMgrs(-90, 180), '  BAN0000000000')
         lat, lon = mgrs.toWgs('BAN0000000000')
         self.assertAlmostEqual(lat, -90.0)
         self.assertAlmostEqual(lon, 0.0)
+
 
     def testWgsCoordinates(self):
         # to MGRS

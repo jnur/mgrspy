@@ -294,10 +294,35 @@ def _utmToMgrs(zone, hemisphere, latitude, longitude, easting, northing, precisi
     @param precision - precision level of MGRS string
     @returns - MGRS coordinate string
     """
+    # FIXME: do we really need this?
     # Special check for rounding to (truncated) eastern edge of zone 31V
-    # TODO: do we really need this?
-    if (zone == 31) and (((latitude >= 56.0) and (latitude < 64.0)) and ((longitude >= 3.0) or (easting >= 500000.0))):
-        pass
+    # if (zone == 31) and (((latitude >= 56.0) and (latitude < 64.0)) and ((longitude >= 3.0) or (easting >= 500000.0))):
+    #    # Reconvert to UTM zone 32
+    #    override = 32
+    #    lat = int(latitude)
+    #    lon = int(longitude)
+    #    if zone == 1 and override == 60:
+    #        zone = override
+    #    elif zone == 60 and override == 1:
+    #        zone = override
+    #    elif (lat > 71) and (lon > -1) and (lon < 42):
+    #        if (zone - 2 <= override) and (override <= zone + 2):
+    #            zone = override
+    #        else:
+    #            raise MgrsException('Zone outside of valid range (1 to 60) and within 1 of "natural" zone')
+    #    elif (zone - 1 <= override) and (override <= zone + 1):
+    #        zone = override
+    #    else:
+    #        raise MgrsException('Zone outside of valid range (1 to 60) and within 1 of "natural" zone')
+    #
+    #    epsg = _epsgForUtm(zone, hemisphere)
+    #
+    #    src = osr.SpatialReference()
+    #    src.ImportFromEPSG(4326)
+    #    dst = osr.SpatialReference()
+    #    dst.ImportFromEPSG(epsg)
+    #    ct = osr.CoordinateTransformation(src, dst)
+    #    x, y, z = ct.TransformPoint(longitude, latitude)
 
     if latitude <= 0.0 and northing == 1.0e7:
         latitude = 0
@@ -407,13 +432,11 @@ def _mgrsString(zone, letters, easting, northing, precision):
     for i in xrange(3):
         mgrs += ALPHABET.keys()[ALPHABET.values().index(letters[i])]
 
-    #easting = math.fmod(round(easting, 1), 100000.0)
     easting = math.fmod(easting + 1e-8, 100000.0)
     if easting >= 99999.5:
         easting = 99999.0
     mgrs += unicode(int(easting)).rjust(5, '0')[:precision]
 
-    #northing = math.fmod(round(northing, 1), 100000.0)
     northing = math.fmod(northing + 1e-8, 100000.0)
     if northing >= 99999.5:
         northing = 99999.0
@@ -456,18 +479,18 @@ def _epsgForWgs(latitude, longitude):
             zone = 1
 
         # Handle UTM special cases
-        if (latitude > 55) and (latitude < 63) and (longitude > -1) and (longitude < 3):
-            zone = 31
-        elif (latitude > 55) and (latitude < 64) and (longitude > 2) and (longitude < 12):
+        if latitude >= 56.0 and latitude < 64.0 and longitude >= 3.0 and longitude < 12.0:
             zone = 32
-        elif (latitude > 71) and (longitude > -1) and (longitude < 9):
-            zone = 31
-        elif (latitude > 71) and (longitude > 8) and (longitude < 21):
-            zone = 33
-        elif (latitude > 71) and (longitude > 20) and (longitude < 33):
-            zone = 35
-        elif (latitude > 71) and (longitude > 32) and (longitude < 42):
-            zone = 37
+
+        if latitude >= 72.0 and latitude < 84.0:
+            if longitude >= 0.0 and longitude < 9.0:
+                zone = 31
+            elif longitude >= 9.0 and longitude < 21.0:
+                zone = 33
+            elif longitude >= 21.0 and longitude < 33.0:
+                zone = 35
+            elif longitude >= 33.0 and longitude < 42.0:
+                zone = 37
 
     # North or South hemisphere
     if latitude >= 0:
