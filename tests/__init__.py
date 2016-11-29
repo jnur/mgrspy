@@ -26,8 +26,8 @@ __revision__ = '$Format:%H$'
 
 import unittest
 
-from .mrgstest import MgrsTest
-from .utilstest import UtilsTest
+from tests.mrgstest import MgrsTest
+from tests.utilstest import UtilsTest
 
 
 def suite():
